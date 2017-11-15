@@ -6,16 +6,17 @@ import Html.Events as Event
 
 
 main =
-    Html.beginnerProgram
-        { model = init 0
+    Html.program
+        { init = init
         , view = view
         , update = update
+        , subscriptions = subscriptions
         }
 
 
-init : Int -> Model
-init value =
-    { counter = value }
+init : (Model, Cmd Message)
+init =
+    ({ counter = 0 }, Cmd.none)
 
 
 type alias Model =
@@ -28,18 +29,22 @@ type Message
     | Decrement
 
 
-update : Message -> Model -> Model
+update : Message -> Model -> ( Model, Cmd Message )
 update message model =
-    case message of
-        Increment ->
-            { model | counter = model.counter + 1 }
+    let
+        next_model =
+            case message of
+                Increment ->
+                    { model | counter = model.counter + 1 }
 
-        Decrement ->
-            let
-                value =
-                    max 0 (model.counter - 1)
-            in
-                { model | counter = value }
+                Decrement ->
+                    let
+                        value =
+                            max 0 (model.counter - 1)
+                    in
+                        { model | counter = value }
+    in
+        ( next_model, Cmd.none )
 
 
 view : Model -> Html.Html Message
@@ -57,3 +62,8 @@ view model =
             , Html.span [] [ Html.text (toString model.counter) ]
             , Html.button [ Event.onClick Increment ] [ Html.text "+" ]
             ]
+
+
+subscriptions : Model -> Sub Message
+subscriptions _ =
+    Sub.none
