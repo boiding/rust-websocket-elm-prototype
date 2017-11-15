@@ -1,4 +1,4 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 import Html
 import Html.Attributes as Attribute
@@ -17,7 +17,7 @@ main =
 
 init : ( Model, Cmd Message )
 init =
-    ( { counter = 0, lastLetter = Nothing, address = "ws://127.0.0.1:3436" }, Cmd.none )
+    ( { counter = 0, lastLetter = Nothing, address = "ws://echo.websocket.org" }, Cmd.none )
 
 
 type alias Model =
@@ -32,11 +32,15 @@ type Message
     | Decrement
     | Receive String
     | Send
+    | Address String
 
 
 update : Message -> Model -> ( Model, Cmd Message )
 update message model =
     case message of
+        Address address ->
+            ( { model | address = address }, Cmd.none )
+
         Receive letter ->
             ( { model | lastLetter = Just letter }, Cmd.none )
 
@@ -81,6 +85,14 @@ view model =
             ]
 
 
+port websocket_address : (String -> msg) -> Sub msg
+
+
 subscriptions : Model -> Sub Message
 subscriptions model =
-    WebSocket.listen model.address Receive
+    Sub.batch
+        [ WebSocket.listen model.address
+            Receive
+        , websocket_address
+            Address
+        ]
