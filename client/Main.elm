@@ -17,7 +17,7 @@ main =
 
 init : ( Model, Cmd Message )
 init =
-    ( { counter = 0, lastLetter = Nothing, address = "ws://echo.websocket.org" }, Cmd.none )
+    ( { counter = 0, lastLetter = Nothing, address = "ws://127.0.0.1:3436" }, Cmd.none )
 
 
 type alias Model =
