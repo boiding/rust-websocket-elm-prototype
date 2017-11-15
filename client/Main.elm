@@ -17,12 +17,13 @@ main =
 
 init : ( Model, Cmd Message )
 init =
-    ( { counter = 0, lastLetter = Nothing }, Cmd.none )
+    ( { counter = 0, lastLetter = Nothing, address = "ws://echo.websocket.org" }, Cmd.none )
 
 
 type alias Model =
     { counter : Int
     , lastLetter : Maybe String
+    , address : String
     }
 
 
@@ -40,7 +41,7 @@ update message model =
             ( { model | lastLetter = Just letter }, Cmd.none )
 
         Send ->
-            ( model, WebSocket.send "ws://echo.websocket.org" "test" )
+            ( model, WebSocket.send model.address "test" )
 
         Increment ->
             ( { model | counter = model.counter + 1 }, Cmd.none )
@@ -81,5 +82,5 @@ view model =
 
 
 subscriptions : Model -> Sub Message
-subscriptions _ =
-    WebSocket.listen "ws://echo.websocket.org" Receive
+subscriptions model =
+    WebSocket.listen model.address Receive
