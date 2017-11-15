@@ -9,12 +9,14 @@ extern crate dotenv;
 use std::env;
 use dotenv::dotenv;
 use std::path::Path;
+use std::thread;
 
 use iron::{Iron, Chain};
 use staticfile::Static;
 use mount::Mount;
 use simplelog::{Config, LogLevelFilter, TermLogger, CombinedLogger};
 use logger::Logger;
+
 
 fn main() {
     dotenv().ok();
@@ -26,10 +28,14 @@ fn main() {
 
     info!("Logger configured");
 
-    let address = env::var("address").expect("\"address\" in environment variables");
-    info!("starting server at {}", address);
+    let iron_thread = thread::spawn(||{
+        let address = env::var("address").expect("\"address\" in environment variables");
+        info!("starting server at {}", address);
 
-    Iron::new(chain()).http(address).unwrap();
+        Iron::new(chain()).http(address).unwrap();
+    });
+
+    iron_thread.join();
 }
 
 fn chain() -> Chain {
