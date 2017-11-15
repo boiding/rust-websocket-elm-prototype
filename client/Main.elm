@@ -3,6 +3,7 @@ module Main exposing (..)
 import Html
 import Html.Attributes as Attribute
 import Html.Events as Event
+import WebSocket
 
 
 main =
@@ -14,37 +15,42 @@ main =
         }
 
 
-init : (Model, Cmd Message)
+init : ( Model, Cmd Message )
 init =
-    ({ counter = 0 }, Cmd.none)
+    ( { counter = 0, lastLetter = Nothing }, Cmd.none )
 
 
 type alias Model =
     { counter : Int
+    , lastLetter : Maybe String
     }
 
 
 type Message
     = Increment
     | Decrement
+    | Receive String
+    | Send
 
 
 update : Message -> Model -> ( Model, Cmd Message )
 update message model =
-    let
-        next_model =
-            case message of
-                Increment ->
-                    { model | counter = model.counter + 1 }
+    case message of
+        Receive letter ->
+            ( { model | lastLetter = Just letter }, Cmd.none )
 
-                Decrement ->
-                    let
-                        value =
-                            max 0 (model.counter - 1)
-                    in
-                        { model | counter = value }
-    in
-        ( next_model, Cmd.none )
+        Send ->
+            ( model, WebSocket.send "ws://echo.websocket.org" "test" )
+
+        Increment ->
+            ( { model | counter = model.counter + 1 }, Cmd.none )
+
+        Decrement ->
+            let
+                value =
+                    max 0 (model.counter - 1)
+            in
+                ( { model | counter = value }, Cmd.none )
 
 
 view : Model -> Html.Html Message
@@ -52,6 +58,14 @@ view model =
     let
         allowed_to_decrement =
             model.counter > 0
+
+        maybe_letter =
+            case model.lastLetter of
+                Just letter ->
+                    letter
+
+                Nothing ->
+                    ""
     in
         Html.div []
             [ Html.button
@@ -61,9 +75,11 @@ view model =
                 [ Html.text "-" ]
             , Html.span [] [ Html.text (toString model.counter) ]
             , Html.button [ Event.onClick Increment ] [ Html.text "+" ]
+            , Html.span [] [ Html.text maybe_letter ]
+            , Html.button [ Event.onClick Send ] [ Html.text "send" ]
             ]
 
 
 subscriptions : Model -> Sub Message
 subscriptions _ =
-    Sub.none
+    WebSocket.listen "ws://echo.websocket.org" Receive
