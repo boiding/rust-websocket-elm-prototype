@@ -10,6 +10,7 @@ extern crate ws;
 use std::env;
 use std::path::Path;
 use std::thread;
+use std::sync::{Arc, RwLock};
 
 use dotenv::dotenv;
 use iron::{Iron, Chain};
@@ -18,6 +19,30 @@ use mount::Mount;
 use simplelog::{Config, LogLevelFilter, TermLogger, CombinedLogger};
 use staticfile::Static;
 use ws::listen;
+
+struct Model {
+    value: u64,
+}
+
+impl Model {
+    pub fn new(starting_value: u64) -> Model {
+        Model { value: starting_value }
+    }
+
+    pub fn increment(&mut self) {
+        self.value = self.value + 1
+    }
+
+    pub fn decrement(&mut self) {
+        if self.value > 0 {
+            self.value = self.value - 1
+        }
+    }
+
+    pub fn value(&self) -> u64 {
+        self.value
+    }
+}
 
 fn main() {
     dotenv().ok();
@@ -29,6 +54,9 @@ fn main() {
 
     info!("Logger configured");
 
+    let model = Model::new(0);
+    let model_ref: Arc<RwLock<Model>> = Arc::new(RwLock::new(model));
+
     let iron_thread = thread::spawn(||{
         let server_address = env::var("address").expect("\"address\" in environment variables");
         info!("starting server at {}", server_address);
@@ -36,20 +64,20 @@ fn main() {
         Iron::new(chain()).http(server_address).unwrap();
     });
 
-    let ws_thread = thread::spawn(||{
+    let ws_model_ref = model_ref.clone();
+    let ws_thread = thread::spawn(move ||{
         let socket_address = env::var("socket").expect("\"socket\" in environment variables");
         info!("starting web socket at {}", socket_address);
 
         if let Err(error) = listen(socket_address, |out| {
+            let handler_model_ref = ws_model_ref.clone();
 
-            // The handler needs to take ownership of out, so we use move
             move |msg| {
-
-                // Handle messages received on this connection
                 info!("Server got message '{}'. ", msg);
 
-                // Use the out channel to send messages back
-                out.send(msg)
+                let mut model = handler_model_ref.write().unwrap();
+                model.increment();
+                out.send(model.value().to_string())
             }
 
         }) {
