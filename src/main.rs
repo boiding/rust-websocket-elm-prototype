@@ -18,7 +18,7 @@ use logger::Logger;
 use mount::Mount;
 use simplelog::{Config, LogLevelFilter, TermLogger, CombinedLogger};
 use staticfile::Static;
-use ws::listen;
+use ws::{listen, Message};
 
 struct Model {
     value: u64,
@@ -72,12 +72,18 @@ fn main() {
         if let Err(error) = listen(socket_address, |out| {
             let handler_model_ref = ws_model_ref.clone();
 
-            move |msg| {
+            move |msg: Message| {
                 info!("Server got message '{}'. ", msg);
-
+                let message: String = msg.to_string();
                 let mut model = handler_model_ref.write().unwrap();
-                model.increment();
-                out.send(model.value().to_string())
+                match message.as_ref() {
+                    "increment" => model.increment(),
+                    "decrement" => model.decrement(),
+                    _ => {
+                        /* do nothing */
+                    },
+                }
+                out.broadcast(model.value().to_string())
             }
 
         }) {
@@ -86,8 +92,8 @@ fn main() {
 }
     });
 
-    iron_thread.join();
-    ws_thread.join();
+    iron_thread.join().unwrap();
+    ws_thread.join().unwrap();
 }
 
 fn chain() -> Chain {
