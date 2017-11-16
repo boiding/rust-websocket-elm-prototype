@@ -9224,20 +9224,20 @@ var _boiding$rust_websocket_elm_prototype$Main$update = F2(
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'Receive':
+				var value = function () {
+					var _p1 = _elm_lang$core$String$toInt(_p0._0);
+					if (_p1.ctor === 'Ok') {
+						return _p1._0;
+					} else {
+						return model.counter;
+					}
+				}();
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{
-							lastLetter: _elm_lang$core$Maybe$Just(_p0._0)
-						}),
+						{counter: value}),
 					_1: _elm_lang$core$Platform_Cmd$none
-				};
-			case 'Send':
-				return {
-					ctor: '_Tuple2',
-					_0: model,
-					_1: A2(_elm_lang$websocket$WebSocket$send, model.address, 'test')
 				};
 			case 'Increment':
 				return {
@@ -9245,7 +9245,7 @@ var _boiding$rust_websocket_elm_prototype$Main$update = F2(
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{counter: model.counter + 1}),
-					_1: _elm_lang$core$Platform_Cmd$none
+					_1: A2(_elm_lang$websocket$WebSocket$send, model.address, 'increment')
 				};
 			default:
 				var value = A2(_elm_lang$core$Basics$max, 0, model.counter - 1);
@@ -9254,24 +9254,23 @@ var _boiding$rust_websocket_elm_prototype$Main$update = F2(
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{counter: value}),
-					_1: _elm_lang$core$Platform_Cmd$none
+					_1: A2(_elm_lang$websocket$WebSocket$send, model.address, 'decrement')
 				};
 		}
 	});
 var _boiding$rust_websocket_elm_prototype$Main$init = {
 	ctor: '_Tuple2',
-	_0: {counter: 0, lastLetter: _elm_lang$core$Maybe$Nothing, address: 'ws://echo.websocket.org'},
+	_0: {counter: 0, address: 'ws://echo.websocket.org'},
 	_1: _elm_lang$core$Platform_Cmd$none
 };
 var _boiding$rust_websocket_elm_prototype$Main$websocket_address = _elm_lang$core$Native_Platform.incomingPort('websocket_address', _elm_lang$core$Json_Decode$string);
-var _boiding$rust_websocket_elm_prototype$Main$Model = F3(
-	function (a, b, c) {
-		return {counter: a, lastLetter: b, address: c};
+var _boiding$rust_websocket_elm_prototype$Main$Model = F2(
+	function (a, b) {
+		return {counter: a, address: b};
 	});
 var _boiding$rust_websocket_elm_prototype$Main$Address = function (a) {
 	return {ctor: 'Address', _0: a};
 };
-var _boiding$rust_websocket_elm_prototype$Main$Send = {ctor: 'Send'};
 var _boiding$rust_websocket_elm_prototype$Main$Receive = function (a) {
 	return {ctor: 'Receive', _0: a};
 };
@@ -9290,14 +9289,6 @@ var _boiding$rust_websocket_elm_prototype$Main$subscriptions = function (model) 
 var _boiding$rust_websocket_elm_prototype$Main$Decrement = {ctor: 'Decrement'};
 var _boiding$rust_websocket_elm_prototype$Main$Increment = {ctor: 'Increment'};
 var _boiding$rust_websocket_elm_prototype$Main$view = function (model) {
-	var maybe_letter = function () {
-		var _p1 = model.lastLetter;
-		if (_p1.ctor === 'Just') {
-			return _p1._0;
-		} else {
-			return '';
-		}
-	}();
 	var allowed_to_decrement = _elm_lang$core$Native_Utils.cmp(model.counter, 0) > 0;
 	return A2(
 		_elm_lang$html$Html$div,
@@ -9345,33 +9336,7 @@ var _boiding$rust_websocket_elm_prototype$Main$view = function (model) {
 							_0: _elm_lang$html$Html$text('+'),
 							_1: {ctor: '[]'}
 						}),
-					_1: {
-						ctor: '::',
-						_0: A2(
-							_elm_lang$html$Html$span,
-							{ctor: '[]'},
-							{
-								ctor: '::',
-								_0: _elm_lang$html$Html$text(maybe_letter),
-								_1: {ctor: '[]'}
-							}),
-						_1: {
-							ctor: '::',
-							_0: A2(
-								_elm_lang$html$Html$button,
-								{
-									ctor: '::',
-									_0: _elm_lang$html$Html_Events$onClick(_boiding$rust_websocket_elm_prototype$Main$Send),
-									_1: {ctor: '[]'}
-								},
-								{
-									ctor: '::',
-									_0: _elm_lang$html$Html$text('send'),
-									_1: {ctor: '[]'}
-								}),
-							_1: {ctor: '[]'}
-						}
-					}
+					_1: {ctor: '[]'}
 				}
 			}
 		});
